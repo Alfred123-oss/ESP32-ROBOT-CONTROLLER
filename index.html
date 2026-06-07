@@ -21,6 +21,7 @@ padding:20px;
 
 h1{
 text-align:center;
+margin-bottom:10px;
 }
 
 .grid{
@@ -87,28 +88,6 @@ margin-bottom:15px;
 font-weight:bold;
 }
 
-/* Hidden wiring section */
-.wiring-box{
-display:none;
-background:#111827;
-padding:20px;
-border-radius:15px;
-margin-top:15px;
-white-space:pre-wrap;
-font-size:14px;
-line-height:1.6;
-}
-
-.toggle-btn{
-background:#2563eb;
-color:white;
-padding:10px 15px;
-border:none;
-border-radius:10px;
-cursor:pointer;
-margin-bottom:10px;
-}
-
 </style>
 </head>
 
@@ -153,9 +132,11 @@ margin-bottom:10px;
 <button class="forward" onclick="send('FORWARD')">⬆ Forward</button>
 
 <div class="middle">
+
 <button class="left" onclick="send('LEFT')">⬅ Left</button>
 <button class="stop" onclick="send('STOP')">⏹ Stop</button>
 <button class="right" onclick="send('RIGHT')">➡ Right</button>
+
 </div>
 
 <button class="backward" onclick="send('BACKWARD')">⬇ Backward</button>
@@ -164,57 +145,9 @@ margin-bottom:10px;
 
 </div>
 
-<!-- TOGGLE BUTTON -->
-<div style="text-align:center;">
-<button class="toggle-btn" onclick="toggleWiring()">
-📌 Show/Hide Wiring Guide
-</button>
-</div>
-
-<!-- HIDDEN WIRING SECTION -->
-<div class="wiring-box" id="wiringBox">
-
-📌 ESP32 → L298N MOTOR DRIVER
-------------------------------------------------
-GPIO 25 → IN1 (Left Motor Forward)
-GPIO 26 → IN2 (Left Motor Backward)
-GPIO 27 → IN3 (Right Motor Forward)
-GPIO 14 → IN4 (Right Motor Backward)
-GPIO 32 → ENA (Left Speed PWM)
-GPIO 33 → ENB (Right Speed PWM)
-GND     → GND (Common Ground)
-
-📌 L298N → MOTORS
-------------------------------------------------
-OUT1 + OUT2 → Left Motors (Front + Rear parallel)
-OUT3 + OUT4 → Right Motors (Front + Rear parallel)
-
-📌 12V BATTERY
-------------------------------------------------
-+12V → L298N 12V Input
-GND  → L298N GND
-
-📌 L298N → ESP32 POWER
-------------------------------------------------
-5V OUT → ESP32 VIN (or use buck converter)
-GND → ESP32 GND
-
-📌 ULTRASONIC SENSOR (HC-SR04)
-------------------------------------------------
-VCC  → 5V
-GND  → GND
-TRIG → GPIO 5
-ECHO → GPIO 18
-
-⚠ IMPORTANT:
-- All grounds must be common
-- Use voltage protection for ESP32 safety
-
-</div>
-
 <script>
 
-// Firebase config
+// ================= FIREBASE CONFIG =================
 const firebaseConfig = {
 apiKey: "AIzaSyD7hWG60J4Q4-V7PFPeJ1_-gt9LAzMpp_A",
 authDomain: "esp32dht-c8d04.firebaseapp.com",
@@ -225,18 +158,22 @@ projectId: "esp32dht-c8d04"
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// Send command
+// ================= SEND COMMAND =================
 function send(cmd){
-db.ref("Robot").update({Command:cmd});
+db.ref("Robot").update({
+Command: cmd
+});
 }
 
-// Speed control
+// ================= SPEED CONTROL =================
 document.getElementById("slider").addEventListener("input",function(){
 document.getElementById("speed").innerHTML=this.value;
-db.ref("Robot").update({Speed:parseInt(this.value)});
+db.ref("Robot").update({
+Speed: parseInt(this.value)
+});
 });
 
-// Distance update
+// ================= DISTANCE =================
 db.ref("Robot/Distance").on("value",snap=>{
 let d=snap.val();
 document.getElementById("distance").innerHTML=d+" cm";
@@ -248,24 +185,46 @@ document.getElementById("alertBox").style.display="none";
 }
 });
 
-// Status update
+// ================= STATUS =================
 db.ref("Robot/Status").on("value",snap=>{
 document.getElementById("status").innerHTML=snap.val();
 });
 
-// Connection status
+// ================= CONNECTION =================
 firebase.database().ref(".info/connected").on("value",snap=>{
 document.getElementById("connection").innerHTML=
-snap.val()?"Online":"Offline";
+snap.val()?"🟢 Online":"🔴 Offline";
 });
 
-// Toggle wiring
-function toggleWiring(){
-let box=document.getElementById("wiringBox");
-box.style.display = (box.style.display==="block") ? "none" : "block";
-}
-
 </script>
+
+<!--
+================= WIRING REFERENCE (DEVELOPER ONLY) =================
+
+ESP32 → L298N
+GPIO25 → IN1
+GPIO26 → IN2
+GPIO27 → IN3
+GPIO14 → IN4
+GPIO32 → ENA
+GPIO33 → ENB
+
+L298N → MOTORS
+OUT1+OUT2 → Left Motors
+OUT3+OUT4 → Right Motors
+
+POWER
+12V Battery → L298N 12V
+L298N GND → ESP32 GND (COMMON GROUND)
+L298N 5V → ESP32 VIN (or buck converter)
+
+ULTRASONIC
+TRIG → GPIO5
+ECHO → GPIO18
+VCC → 5V
+GND → GND
+===============================================================
+-->
 
 </body>
 </html>
