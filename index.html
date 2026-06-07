@@ -1,125 +1,255 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>ESP32 Robot Controller</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      background: #f2f2f2;
-    }
+<title>ESP32 Smart Robot Dashboard</title>
 
-    h2 {
-      color: #333;
-    }
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    button {
-      width: 120px;
-      height: 50px;
-      margin: 10px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+<style>
 
-    .fwd { background: #4CAF50; color: white; }
-    .bwd { background: #f44336; color: white; }
-    .left { background: #2196F3; color: white; }
-    .right { background: #ff9800; color: white; }
-    .stop { background: #000; color: white; }
+body{
+margin:0;
+font-family:Segoe UI,sans-serif;
+background:#0f172a;
+color:white;
+padding:20px;
+}
 
-    .panel { margin-top: 20px; }
+h1,h2{
+text-align:center;
+}
 
-    input[type=range] {
-      width: 300px;
-    }
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:15px;
+margin-bottom:20px;
+}
 
-    .info {
-      margin-top: 20px;
-      font-size: 18px;
-      background: white;
-      padding: 10px;
-      display: inline-block;
-      border-radius: 10px;
-    }
-  </style>
+.card{
+background:#1e293b;
+padding:15px;
+border-radius:15px;
+text-align:center;
+box-shadow:0 5px 15px rgba(0,0,0,.3);
+}
+
+.value{
+font-size:26px;
+font-weight:bold;
+}
+
+.controls{
+background:#1e293b;
+padding:20px;
+border-radius:15px;
+text-align:center;
+margin-bottom:20px;
+}
+
+button{
+padding:15px 20px;
+margin:5px;
+border:none;
+border-radius:12px;
+font-size:16px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.forward{background:#22c55e;color:white;}
+.backward{background:#ef4444;color:white;}
+.left{background:#3b82f6;color:white;}
+.right{background:#f97316;color:white;}
+.stop{background:#000;color:white;}
+
+.middle{
+display:flex;
+justify-content:center;
+flex-wrap:wrap;
+}
+
+.slider{
+width:100%;
+margin-top:10px;
+}
+
+.alert{
+display:none;
+background:#7f1d1d;
+padding:15px;
+border-radius:10px;
+text-align:center;
+margin-bottom:15px;
+font-weight:bold;
+}
+
+.wiring{
+background:#111827;
+padding:20px;
+border-radius:15px;
+margin-top:20px;
+line-height:1.6;
+font-size:14px;
+white-space:pre-wrap;
+}
+
+.wire-title{
+color:#38bdf8;
+font-weight:bold;
+}
+
+</style>
 </head>
 
 <body>
 
-<h2>ESP32 4WD Robot Control Panel</h2>
+<h1>🤖 ESP32 Smart Robot Dashboard</h1>
 
-<!-- CONTROL BUTTONS -->
-<div class="panel">
+<div class="alert" id="alertBox">
+🚨 OBSTACLE DETECTED — ROBOT STOPPED
+</div>
 
-  <button class="fwd" onclick="sendCommand('FORWARD')">Forward</button><br>
+<!-- DASHBOARD -->
+<div class="grid">
 
-  <button class="left" onclick="sendCommand('LEFT')">Left</button>
-  <button class="stop" onclick="sendCommand('STOP')">Stop</button>
-  <button class="right" onclick="sendCommand('RIGHT')">Right</button><br>
+<div class="card">
+<h2>📏 Distance</h2>
+<div class="value" id="distance">0 cm</div>
+</div>
 
-  <button class="bwd" onclick="sendCommand('BACKWARD')">Backward</button>
+<div class="card">
+<h2>⚡ Speed</h2>
+<div class="value" id="speed">200</div>
+</div>
+
+<div class="card">
+<h2>📡 Connection</h2>
+<div class="value" id="connection">Connecting...</div>
+</div>
+
+<div class="card">
+<h2>🤖 Status</h2>
+<div class="value" id="status">Ready</div>
+</div>
 
 </div>
 
-<!-- SPEED CONTROL -->
-<h3>Speed Control</h3>
-<input type="range" min="0" max="255" value="200"
-       oninput="updateSpeed(this.value)">
-<p id="speedText">Speed: 200</p>
+<!-- CONTROLS -->
+<div class="controls">
 
-<!-- LIVE DATA -->
-<div class="info">
-  <p>📏 Distance: <span id="distance">--</span> cm</p>
-  <p>⚙ Status: <span id="status">--</span></p>
+<h2>🎮 Controls</h2>
+
+<button class="forward" onclick="send('FORWARD')">⬆ Forward</button>
+
+<div class="middle">
+
+<button class="left" onclick="send('LEFT')">⬅ Left</button>
+<button class="stop" onclick="send('STOP')">⏹ Stop</button>
+<button class="right" onclick="send('RIGHT')">➡ Right</button>
+
 </div>
 
-<!-- FIREBASE SDK -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase.js"></script>
+<button class="backward" onclick="send('BACKWARD')">⬇ Backward</button>
+
+<input type="range" min="0" max="255" value="200" id="slider" class="slider">
+
+</div>
+
+<!-- WIRING SCHEMATIC SECTION -->
+<div class="wiring">
+
+<h2 class="wire-title">📌 FULL WIRING SCHEMATIC (REFERENCE)</h2>
+
+ESP32 → L298N MOTOR DRIVER
+------------------------------------------------
+GPIO 25 → IN1 (Left Motor Forward)
+GPIO 26 → IN2 (Left Motor Backward)
+GPIO 27 → IN3 (Right Motor Forward)
+GPIO 14 → IN4 (Right Motor Backward)
+GPIO 32 → ENA (Left Speed PWM)
+GPIO 33 → ENB (Right Speed PWM)
+GND     → GND (Common Ground)
+
+L298N → MOTORS
+------------------------------------------------
+OUT1 + OUT2 → Left Motors (Front + Rear parallel)
+OUT3 + OUT4 → Right Motors (Front + Rear parallel)
+
+BATTERY (12V)
+------------------------------------------------
++12V → L298N 12V Input
+GND  → L298N GND
+
+L298N POWER → ESP32
+------------------------------------------------
+5V OUT (or Buck Converter) → ESP32 VIN
+GND → ESP32 GND
+
+ULTRASONIC SENSOR (HC-SR04)
+------------------------------------------------
+VCC  → 5V
+GND  → GND
+TRIG → GPIO 5
+ECHO → GPIO 18
+
+⚠ IMPORTANT NOTES:
+- All GND must be connected together
+- Use buck converter if ESP32 resets
+- Do NOT exceed 5V on ESP32 pins
+
+</div>
 
 <script>
 
-  // 🔥 YOUR FIREBASE CONFIG (REPLACED)
-  const firebaseConfig = {
-    apiKey: "AIzaSyD7hWG60J4Q4-V7PFPeJ1_-gt9LAzMpp_A",
-    authDomain: "esp32dht-c8d04.firebaseapp.com",
-    databaseURL: "https://esp32dht-c8d04-default-rtdb.firebaseio.com",
-    projectId: "esp32dht-c8d04"
-  };
+// Firebase config
+const firebaseConfig = {
+apiKey: "AIzaSyD7hWG60J4Q4-V7PFPeJ1_-gt9LAzMpp_A",
+authDomain: "esp32dht-c8d04.firebaseapp.com",
+databaseURL: "https://esp32dht-c8d04-default-rtdb.firebaseio.com",
+projectId: "esp32dht-c8d04"
+};
 
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-  const db = firebase.database();
+// Send command
+function send(cmd){
+db.ref("Robot").update({Command:cmd});
+}
 
-  // ---------------- SEND COMMAND ----------------
-  function sendCommand(cmd) {
-    db.ref("Robot").update({
-      Command: cmd
-    });
-  }
+// Speed control
+document.getElementById("slider").addEventListener("input",function(){
+document.getElementById("speed").innerHTML=this.value;
+db.ref("Robot").update({Speed:parseInt(this.value)});
+});
 
-  // ---------------- UPDATE SPEED ----------------
-  function updateSpeed(val) {
-    document.getElementById("speedText").innerText = "Speed: " + val;
+// Live distance
+db.ref("Robot/Distance").on("value",snap=>{
+let d=snap.val();
+document.getElementById("distance").innerHTML=d+" cm";
 
-    db.ref("Robot").update({
-      Speed: parseInt(val)
-    });
-  }
+if(d<20){
+document.getElementById("alertBox").style.display="block";
+}else{
+document.getElementById("alertBox").style.display="none";
+}
+});
 
-  // ---------------- LIVE DISTANCE ----------------
-  db.ref("Robot/Distance").on("value", (snapshot) => {
-    document.getElementById("distance").innerText = snapshot.val();
-  });
+// Status
+db.ref("Robot/Status").on("value",snap=>{
+document.getElementById("status").innerHTML=snap.val();
+});
 
-  // ---------------- LIVE STATUS ----------------
-  db.ref("Robot/Status").on("value", (snapshot) => {
-    document.getElementById("status").innerText = snapshot.val();
-  });
+// Connection
+firebase.database().ref(".info/connected").on("value",snap=>{
+document.getElementById("connection").innerHTML=
+snap.val()?"Online":"Offline";
+});
 
 </script>
 
